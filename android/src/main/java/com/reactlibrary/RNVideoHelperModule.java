@@ -18,6 +18,7 @@ import java.util.UUID;
 import com.reactlibrary.video.*;
 
 public class RNVideoHelperModule extends ReactContextBaseJavaModule {
+  private VideoCompress.VideoCompressTask videoCompressTask = null;
 
   private void sendProgress(ReactContext reactContext, float progress) {
     reactContext
@@ -38,6 +39,13 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void cancelCompress() {
+    if (videoCompressTask != null) {
+      videoCompressTask.cancel();
+    }
+  }
+
+  @ReactMethod
   public void compress(String source, ReadableMap options, final Promise pm) {
     String inputUri = Uri.parse(source).getPath();
     File outputDir = reactContext.getCacheDir();
@@ -49,7 +57,7 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
     long endTime = options.hasKey("endTime") ? (long)options.getDouble("endTime") : -1;
 
     try {
-      VideoCompress.compressVideo(inputUri, outputUri, quality, startTime, endTime, new VideoCompress.CompressListener() {
+      videoCompressTask = VideoCompress.compressVideo(inputUri, outputUri, quality, startTime, endTime, new VideoCompress.CompressListener() {
         @Override
         public void onStart() {
           //Start Compress
