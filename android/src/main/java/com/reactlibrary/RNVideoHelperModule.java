@@ -1,36 +1,32 @@
-
 package com.reactlibrary;
 
+import android.net.Uri;
+import android.util.Log;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-
-import android.net.Uri;
-import android.util.Log;
-
+import com.reactlibrary.video.VideoCompress;
 import java.io.File;
 import java.util.UUID;
 
-import com.reactlibrary.video.*;
-
 public class RNVideoHelperModule extends ReactContextBaseJavaModule {
-  private VideoCompress.VideoCompressTask videoCompressTask = null;
-
-  private void sendProgress(ReactContext reactContext, float progress) {
-    reactContext
-            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-            .emit("progress", progress);
-  }
 
   private final ReactApplicationContext reactContext;
+  private VideoCompress.VideoCompressTask videoCompressTask = null;
 
   public RNVideoHelperModule(ReactApplicationContext reactContext) {
     super(reactContext);
     this.reactContext = reactContext;
+  }
+
+  private void sendProgress(ReactContext reactContext, float progress) {
+    reactContext
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+        .emit("progress", progress);
   }
 
   @Override
@@ -50,39 +46,41 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
     String inputUri = Uri.parse(source).getPath();
     File outputDir = reactContext.getCacheDir();
 
-    final String outputUri = String.format("%s/%s.mp4", outputDir.getPath(), UUID.randomUUID().toString());
+    final String outputUri = String
+        .format("%s/%s.mp4", outputDir.getPath(), UUID.randomUUID().toString());
 
-    String quality = options.hasKey("quality") ? options.getString("quality") : "";
-    long startTime = options.hasKey("startTime") ? (long)options.getDouble("startTime") : -1;
-    long endTime = options.hasKey("endTime") ? (long)options.getDouble("endTime") : -1;
+    final String quality = options.hasKey("quality") ? options.getString("quality") : "low";
+    final long startTime = options.hasKey("startTime") ? (long) options.getDouble("startTime") : -1;
+    final long endTime = options.hasKey("endTime") ? (long) options.getDouble("endTime") : -1;
 
     try {
-      videoCompressTask = VideoCompress.compressVideo(inputUri, outputUri, quality, startTime, endTime, new VideoCompress.CompressListener() {
-        @Override
-        public void onStart() {
-          //Start Compress
-          Log.d("INFO", "Compression started");
-        }
+      videoCompressTask = VideoCompress
+          .compressVideo(inputUri, outputUri, quality, startTime, endTime,
+              new VideoCompress.CompressListener() {
+                @Override
+                public void onStart() {
+                  //Start Compress
+                  Log.d("INFO", "Compression started");
+                }
 
-        @Override
-        public void onSuccess() {
-          //Finish successfully
-          pm.resolve(outputUri);
+                @Override
+                public void onSuccess() {
+                  //Finish successfully
+                  pm.resolve(outputUri);
+                }
 
-        }
+                @Override
+                public void onFail() {
+                  //Failed
+                  pm.reject("ERROR", "Failed to compress video");
+                }
 
-        @Override
-        public void onFail() {
-          //Failed
-          pm.reject("ERROR", "Failed to compress video");
-        }
-
-        @Override
-        public void onProgress(float percent) {
-          sendProgress(reactContext, percent/100);
-        }
-      });
-    } catch ( Throwable e ) {
+                @Override
+                public void onProgress(float percent) {
+                  sendProgress(reactContext, percent / 100);
+                }
+              });
+    } catch (Throwable e) {
       e.printStackTrace();
     }
   }
