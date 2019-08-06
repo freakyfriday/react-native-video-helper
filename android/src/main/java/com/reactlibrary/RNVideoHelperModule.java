@@ -1,7 +1,5 @@
 package com.reactlibrary;
 
-import static com.reactlibrary.video.VideoCompress.compressVideo;
-
 import android.net.Uri;
 import android.os.AsyncTask.Status;
 import android.support.annotation.NonNull;
@@ -13,8 +11,8 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.reactlibrary.video.VideoCompress;
-import com.reactlibrary.video.VideoCompress.CompressListener;
+import com.reactlibrary.video.VideoCompressionTask.VideoCompressionListener;
+import com.reactlibrary.video.VideoCompressionTask;
 import java.io.File;
 import java.util.UUID;
 
@@ -22,7 +20,7 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
 
   private static final String TAG = "RNVideoHelper";
   private final ReactApplicationContext reactContext;
-  private VideoCompress.VideoCompressTask videoCompressTask = null;
+  private VideoCompressionTask videoCompressTask = null;
 
   public RNVideoHelperModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -66,21 +64,23 @@ public class RNVideoHelperModule extends ReactContextBaseJavaModule {
     cancelExistingTaskIfExists();
 
     try {
-      videoCompressTask = compressVideo(
+      videoCompressTask = new VideoCompressionTask(
           inputUri,
           outputUri,
           quality,
           startTime,
           endTime,
-          createListener(pm, outputUri));
+          createListener(pm, outputUri)
+      );
+      videoCompressTask.execute();
     } catch (Throwable e) {
       Log.e(TAG, e.getMessage(), e);
     }
   }
 
   @NonNull
-  private CompressListener createListener(final Promise pm, final String outputUri) {
-    return new CompressListener() {
+  private VideoCompressionListener createListener(final Promise pm, final String outputUri) {
+    return new VideoCompressionListener() {
       @Override
       public void onStart() {
         //Start Compress
