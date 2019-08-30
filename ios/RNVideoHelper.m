@@ -76,7 +76,18 @@ RCT_EXPORT_METHOD(compress:(NSString *)source options:(NSDictionary *)options re
     
     CGSize transformedVideoSize =
     CGSizeApplyAffineTransform(videoTrack.naturalSize, videoTrack.preferredTransform);
-    bool videoIsPortrait = transformedVideoSize.width < transformedVideoSize.height;
+    bool videoIsPortrait = false; //transformedVideoSize.width < transformedVideoSize.height;
+    
+    CGAffineTransform txf = [videoTrack preferredTransform];
+    
+    if (videoTrack.naturalSize.width == txf.tx && videoTrack.naturalSize.height == txf.ty)
+        videoIsPortrait = false; // UIInterfaceOrientationLandscapeRight;
+    else if (txf.tx == 0 && txf.ty == 0)
+        videoIsPortrait = false; //return UIInterfaceOrientationLandscapeLeft;
+    else if (txf.tx == 0 && txf.ty == videoTrack.naturalSize.width)
+        videoIsPortrait = true; //return UIInterfaceOrientationPortraitUpsideDown;
+    else
+        videoIsPortrait = true; //return UIInterfaceOrientationPortrait;
 
     if (videoIsPortrait) {
         originalWidth = naturalSize.height;
